@@ -1,0 +1,15 @@
+# .dockerignore - 第4关
+
+# 排除 node_modules（在 Dockerfile 中会重新 npm install）
+node_modules
+vue-project/node_modules
+
+# 排除构建产物（在 Dockerfile 中会重新构建）
+vue-project/dist
+
+# 排除开发环境文件
+.git
+.gitignore
+README.md
+TROUBLESHOOTING.md
+*.md

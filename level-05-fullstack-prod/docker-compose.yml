@@ -1,0 +1,83 @@
+# ===============================================================
+# docker-compose.yml - 第5关：全栈开发环境
+# ===============================================================
+# 此文件用于开发环境，暴露各服务端口方便调试
+# 生产环境请使用 docker-compose.prod.yml（覆盖/扩展本文件）
+
+services:
+  # ===== 1. Nginx 反向代理（入口） =====
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"          # 开发环境暴露 80 端口
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ===== 2. 前端服务（Nginx 托管静态文件） =====
+  frontend:
+    build: ./frontend
+    # 开发环境也暴露前端端口，方便直接调试前端
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ===== 3. 后端 API 服务 =====
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"      # 开发环境暴露后端端口方便 curl 调试
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://app_user:app_pass@postgres:5432/app_db
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy   # 等待 PostgreSQL 健康检查通过
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ===== 4. PostgreSQL 数据库 =====
+  postgres:
+    image: postgres:16-alpine
+    # postgres:16-alpine 约 100MB，postgres:16（Debian）约 400MB
+    ports:
+      - "5432:5432"      # 开发环境暴露数据库端口，方便用 GUI 工具连接
+    environment:
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=app_pass
+      - POSTGRES_DB=app_db
+    volumes:
+      # 命名卷持久化数据
+      - postgres-data:/var/lib/postgresql/data
+      # 初始化 SQL 脚本（首次启动时自动执行）
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      # 健康检查：验证 PostgreSQL 是否可以接受连接
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s    # 首次启动等待 15 秒再开始检查
+    networks:
+      - app-network
+    restart: unless-stopped
+
+# ===== 命名卷定义 =====
+volumes:
+  postgres-data:
+    driver: local
+    # 命名卷存储在 Docker 管理的存储区域
+    # 生命周期独立于容器：即使 docker compose down，数据也不会丢失
+    # 只有 docker compose down -v 才会删除卷
+
+# ===== 网络定义 =====
+networks:
+  app-network:
+    driver: bridge

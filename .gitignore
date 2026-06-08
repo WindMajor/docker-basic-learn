@@ -1,0 +1,42 @@
+# ===============================================================
+# .gitignore - Docker 实战学习项目
+# ===============================================================
+
+# ===== Node.js =====
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnpm-store/
+
+# ===== 构建产物 =====
+dist/
+build/
+*.tsbuildinfo
+
+# ===== 环境变量（含敏感信息） =====
+.env
+.env.*
+!.env.example
+
+# ===== IDE 配置 =====
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ===== Docker =====
+# 不提交 .env.prod 等敏感环境配置（已在上面排除）
+# 但允许提交 Dockerfile 和 docker-compose.yml
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 操作系统文件 =====
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini

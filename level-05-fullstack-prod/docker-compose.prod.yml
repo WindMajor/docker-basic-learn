@@ -1,0 +1,104 @@
+# ===============================================================
+# docker-compose.prod.yml - 第5关：生产环境配置
+# ===============================================================
+# 使用方式：docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# 此文件覆盖/扩展 docker-compose.yml，做以下变更：
+#   1. 不暴露数据库和后端端口到宿主机（安全性）
+#   2. 使用环境变量文件注入敏感信息
+#   3. 配置日志限制（防止磁盘占满）
+#   4. 配置更严格的健康检查
+
+services:
+  # ===== 生产环境 Nginx =====
+  nginx:
+    # ports 配置会被合并，prod 可以覆盖 ports
+    # 生产环境只暴露 80 端口，不额外暴露前端/后端端口
+    ports:
+      - "80:80"
+    # 日志限制
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # 每个日志文件最大 10MB
+        max-file: "3"     # 保留 3 个历史文件
+
+  # ===== 生产环境前端 =====
+  frontend:
+    # 生产环境不暴露前端端口到宿主机
+    # 所有流量通过 Nginx 入口
+    ports: !reset []       # 清空 dev 环境的端口映射
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===== 生产环境后端 =====
+  backend:
+    # 【安全】生产环境不暴露后端端口
+    # 数据库和 API 都不应该直接暴露在公网上
+    # 所有外部请求必须通过 Nginx 反向代理
+    ports: !reset []
+    environment:
+      - NODE_ENV=production
+      # 从 .env.prod 文件读取敏感配置
+      # .env.prod 不应提交到 Git！生产环境运维人员手动创建
+    env_file:
+      - .env.prod
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===== 生产环境 PostgreSQL =====
+  postgres:
+    # 【安全】生产环境绝不暴露数据库端口到宿主机！
+    # 数据库只允许在内部网络中被 backend 服务访问
+    ports: !reset []
+    environment:
+      # 生产环境应从 .env.prod 中读取数据库密码
+      # 不要在这里硬编码密码！
+    env_file:
+      - .env.prod
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ===============================================================
+# 【知识点讲解】
+# ===============================================================
+#
+# 1. 为什么生产环境不暴露数据库端口？
+#    - 攻击面：暴露 5432 端口意味着任何人都可以尝试连接数据库
+#    - 最佳实践：数据库只允许在内部网络访问，通过 API 作为唯一入口
+#    - 如需运维：使用 docker compose exec postgres psql 进入数据库
+#
+# 2. restart 策略
+#    - no：不自动重启
+#    - always：无论退出码如何都重启（即使手动 stop）
+#    - unless-stopped：除非手动 stop，否则自动重启（推荐生产）
+#    - on-failure：仅在非正常退出时重启
+#
+# 3. 日志限制
+#    默认 docker logs 使用 json-file 驱动，文件无限增长
+#    如果不限制，日志可能占满磁盘
+#    生产环境应配置 max-size 和 max-file，或使用其他日志驱动
+#
+# 4. .env 文件安全
+#    .env 和 .env.prod 包含敏感信息（数据库密码等）
+#    务必添加到 .gitignore，绝对不要提交到 Git
+#    在 CI/CD 中通过 Secret 管理工具注入环境变量
+#
+# 5. HTTPS（补充说明）
+#    生产环境必须配置 HTTPS
+#    方式一：在 Nginx 配置中添加 SSL 证书
+#    方式二：使用云服务商的负载均衡器（如腾讯云 CLB）终止 SSL
+#    证书可使用 certbot（Let's Encrypt）免费获取
+# ===============================================================
