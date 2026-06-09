@@ -49,7 +49,8 @@ EXPOSE 3000
 #   - ENTRYPOINT 不可以被覆盖（除非使用 --entrypoint 参数）
 #   - 组合使用：ENTRYPOINT ["node"] + CMD ["server.js"]  ⇒  docker run 时只需传参
 # JSON 数组格式（exec 形式）是推荐写法，直接执行进程，PID 为 1
-CMD ["node", "server.js"]
+ENTRYPOINT ["node"]
+CMD ["server.js"]
 
 # 替代写法对比：
 #   CMD node server.js           # shell 形式，会启动 sh 再执行 node（PID 不是 1）

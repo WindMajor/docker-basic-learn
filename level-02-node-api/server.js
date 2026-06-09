@@ -12,7 +12,8 @@ fastify.get('/health', async (request, reply) => {
   return {
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    message: '哈哈，太棒了👍',
   };
 });
 
@@ -21,7 +22,7 @@ fastify.get('/env', async (request, reply) => {
   return {
     NODE_ENV: NODE_ENV,
     PORT: PORT,
-    hostname: require('os').hostname()
+    hostname: require('os').hostname(),
   };
 });
 
@@ -31,8 +32,8 @@ fastify.get('/', async (request, reply) => {
     message: 'Docker 第2关运行成功！',
     endpoints: {
       health: '/health',
-      env: '/env'
-    }
+      env: '/env',
+    },
   };
 });
 

@@ -17,12 +17,14 @@
 ### 1. 构建镜像
 
 ```bash
-docker build -t lvl2-node-api .
+docker build . -t lvl2-node-api
 ```
 
+> **`.`** 指定当前目录为构建上下文路径。
+>
 > **`-t`**：为镜像指定名称（Name）和标签（Tag），格式为 `名称:标签`，省略标签默认为 `latest`。
 >
-> **构建流程**：Docker 逐行执行 Dockerfile 中的指令，每条指令生成一个**只读层（Layer）**。如果某层未变化，Docker 会直接使用缓存。
+> **构建流程**：Docker 会在当前目录下寻找Dockerfile，并逐行执行 Dockerfile 中的指令，每条指令生成一个**只读层（Layer）**。如果某层未变化，Docker 会直接使用缓存。
 
 ### 2. 查看构建好的镜像
 
@@ -111,6 +113,7 @@ COPY . .           → Layer 3（代码变了，重建）
 ```
 
 **缓存失效规则**：
+
 - 如果某条指令的文件或上下文发生变化，该层缓存失效
 - 该层之后的所有层缓存也全部失效
 - **优化技巧**：先复制不常变的文件（`package.json`），再复制频繁变动的文件（源码），尽可能复用缓存
@@ -123,11 +126,11 @@ COPY . .           → Layer 3（代码变了，重建）
 
 ### `CMD` 与 `ENTRYPOINT` 的区别
 
-| 指令 | 可被覆盖 | 典型用途 |
-|------|---------|---------|
-| `CMD ["node", "server.js"]` | ✅ `docker run <镜像> echo hello` 覆盖为 `echo hello` | 提供默认启动命令 |
-| `ENTRYPOINT ["node"]` | ❌ 除非 `--entrypoint` | 固定执行入口 |
-| 组合使用 | CMD 作为默认参数 | `ENTRYPOINT ["node"]` + `CMD ["server.js"]` |
+| 指令                        | 可被覆盖                                                                              | 典型用途                                    |
+| --------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `CMD ["node", "server.js"]` | ✅ `docker run <镜像> echo hello` ，这么执行会把 `node server.js` 覆盖为 `echo hello` | 提供默认启动命令                            |
+| `ENTRYPOINT ["node"]`       | ❌ 除非 `--entrypoint`                                                                | 固定执行入口                                |
+| 组合使用                    | CMD 作为默认参数                                                                      | `ENTRYPOINT ["node"]` + `CMD ["server.js"]` |
 
 **组合使用示例**：
 
