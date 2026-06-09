@@ -3,10 +3,13 @@
 ## 故障 1：端口被占用
 
 **错误日志**：
+
 ```
 docker: Error response from daemon: driver failed programming external connectivity on endpoint lvl1-nginx: Bind for 0.0.0.0:8080 failed: port is already allocated.
 ```
+
 或：
+
 ```
 Error response from daemon: Ports are not available: exposing port TCP 0.0.0.0:8080 -> 0.0.0.0:0: listen tcp 0.0.0.0:8080: bind: address already in use
 ```
@@ -34,6 +37,7 @@ docker run -d -p 8081:80 --name lvl1-nginx nginx:alpine
 ## 故障 2：卷挂载权限问题（Linux）
 
 **错误日志**：
+
 ```
 nginx: [emerg] open() "/usr/share/nginx/html/index.html" failed (13: Permission denied)
 ```
@@ -44,7 +48,7 @@ nginx: [emerg] open() "/usr/share/nginx/html/index.html" failed (13: Permission 
 
 ```bash
 # 方案 A：添加 :Z 后缀（SELinux 重新标记）
-docker run -d -p 8080:80 --name lvl1-nginx -v $(pwd)/index.html:/usr/share/nginx/html/index.html:Z nginx:alpine
+docker run -d -p 8080:80 --name lvl1-nginx -v $PWD/index.html:/usr/share/nginx/html/index.html:Z nginx:alpine
 
 # 方案 B：以特权模式运行（不推荐，降低安全性）
 docker run -d -p 8080:80 --name lvl1-nginx --privileged nginx:alpine
@@ -82,5 +86,5 @@ docker run -d -p 8080:80 --name lvl1-nginx -v C:\Users\xxx\index.html:/usr/share
 
 # 4. 重建容器（终极方案）
 docker stop lvl1-nginx && docker rm lvl1-nginx
-docker run -d -p 8080:80 --name lvl1-nginx -v $(pwd)/index.html:/usr/share/nginx/html/index.html nginx:alpine
+docker run -d -p 8080:80 --name lvl1-nginx -v $PWD/index.html:/usr/share/nginx/html/index.html nginx:alpine
 ```
