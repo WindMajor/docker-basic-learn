@@ -1,0 +1,9 @@
+# .dockerignore - 第7关
+node_modules
+dist
+.git
+.gitignore
+README.md
+TROUBLESHOOTING.md
+*.md
+Dockerfile.no-cache

@@ -1,0 +1,11 @@
+{
+  "name": "level-06-security-resources",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "fastify": "^4.26.0"
+  }
+}

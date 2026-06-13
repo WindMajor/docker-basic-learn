@@ -1,0 +1,58 @@
+# ===============================================================
+# docker-compose.yml - 第6关：安全运行 + 资源限制
+# ===============================================================
+# 通过 Compose 演示两种常用安全实践：
+#   1. 资源限制（防止单个服务占满宿主机资源）
+#   2. 安全配置（非 root 用户 + 只读文件系统 + Cap 裁剪）
+
+services:
+  # ===== 安全加固的 API 服务 =====
+  secure-api:
+    build: .
+    container_name: lvl6-secure-api
+
+    # docker run 直接传参
+    ports:
+      - "3000:3000"
+
+    # ===== 1. 资源限制（deploy.resources） =====
+    # 为什么需要资源限制？
+    #   - 防止内存泄漏的服务吃光宿主机内存
+    #   - 避免 CPU 密集型任务影响其他容器
+    #   - 在多租户环境中实现公平调度
+    #
+    # 注意：deploy 配置仅在 docker stack deploy（Swarm 模式）中完全生效
+    # docker compose up 模式下，需要使用 V2 + --compatibility 或手动 docker run 参数
+    # 详见 README 说明
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'        # 最多使用 0.5 个 CPU 核心
+          memory: 256M       # 最多使用 256MB 内存
+        reservations:
+          cpus: '0.1'        # 预留 0.1 核
+          memory: 64M        # 预留 64MB 内存
+
+    # ===== 2. 环境变量 =====
+    environment:
+      - NODE_ENV=production
+
+    # ===== 3. 重启策略 =====
+    restart: unless-stopped
+
+    # ===== 4. 安全配置 =====
+    # security_opt：安全选项
+    #   - no-new-privileges:true：禁止容器通过 suid 提权
+    security_opt:
+      - no-new-privileges:true
+
+    # 注意：read_only 和 cap_drop 在 Compose 中需要通过 Docker 运行时参数设置
+    # 或在 docker-compose.yml 中使用 extended syntax（部分版本支持）
+    # 本关重点通过 docker run 命令演示，README 中有完整示例
+
+# 不使用命名卷——本关不涉及数据持久化
+
+networks:
+  default:
+    name: lvl6-network
+    driver: bridge

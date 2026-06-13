@@ -1,0 +1,42 @@
+# ===============================================================
+# docker-compose.yml - 第9关：使用 Profiles 按场景启动
+# ===============================================================
+# Compose Profiles 允许根据场景选择性启动服务
+# 例如：开发时需要 debug 工具，生产时不启动
+
+services:
+  # ===== 始终启动的核心服务 =====
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  # ===== 仅在开发场景启动（profiles: debug） =====
+  debug-tools:
+    image: alpine
+    container_name: lvl9-debug
+    profiles:
+      - debug           # 只有指定 --profile debug 时才启动
+    command: sleep infinity
+    # 用途：方便进入容器调试网络连接
+    # docker compose --profile debug exec debug-tools sh
+    # 在 shell 中：ping api、curl http://api:3000/health
+
+  # ===== 仅在压测场景启动 =====
+  load-test:
+    image: alpine
+    container_name: lvl9-load
+    profiles:
+      - loadtest         # 只有指定 --profile loadtest 时才启动
+    command: sh -c "apk add curl && while true; do curl -s http://api:3000/health; sleep 1; done"
+
+# ===============================================================
+# 使用方式：
+#   正常启动：         docker compose up -d
+#   启动 + 调试工具：   docker compose --profile debug up -d
+#   启动 + 压测：       docker compose --profile loadtest up -d
+#   启动全部：          docker compose --profile debug --profile loadtest up -d
+#
+# 不同 profile 的服务是相互隔离的
+# ===============================================================
